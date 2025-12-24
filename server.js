@@ -9,6 +9,9 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Trust proxy setting for rate limiting behind reverse proxy
+app.set('trust proxy', 1);
+
 // Connect to database
 connectDB();
 
@@ -27,6 +30,14 @@ const limiter = rateLimit({
     max: config.rateLimit.maxRequests,
     message: 'Too many requests from this IP, please try again later'
 });
+
+// Add logging for trust proxy and X-Forwarded-For header
+app.use('/api', (req, res, next) => {
+    console.log('Trust proxy setting:', app.get('trust proxy'));
+    console.log('X-Forwarded-For header:', req.headers['x-forwarded-for']);
+    next();
+});
+
 app.use('/api', limiter);
 
 // Body parser

@@ -3,6 +3,10 @@ const config = require('../config');
 
 class EmailService {
   constructor() {
+    if (!config.smtp.user || !config.smtp.pass) {
+      throw new Error('SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS environment variables.');
+    }
+
     this.transporter = nodemailer.createTransport({
       host: config.smtp.host,
       port: config.smtp.port,
@@ -12,6 +16,17 @@ class EmailService {
         pass: config.smtp.pass
       }
     });
+
+    // Verify SMTP connection
+    this.transporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ SMTP connection failed:', error.message);
+      } else {
+        console.log('✅ SMTP connection verified successfully');
+      }
+    });
+
+    console.log(`📧 Email service initialized with SMTP host: ${config.smtp.host}, port: ${config.smtp.port}, user: ${config.smtp.user}`);
   }
 
   async sendOTP(email, otp, name) {
@@ -62,7 +77,13 @@ class EmailService {
       await this.transporter.sendMail(mailOptions);
       console.log(`✅ OTP sent to ${email}`);
     } catch (error) {
-      console.error('❌ Email send error:', error);
+      console.error('❌ Email send error:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response,
+        responseCode: error.responseCode
+      });
       throw new Error('Failed to send OTP email');
     }
   }
@@ -152,7 +173,13 @@ class EmailService {
       await this.transporter.sendMail(mailOptions);
       console.log(`✅ Ticket confirmation sent to ${email}`);
     } catch (error) {
-      console.error('❌ Email send error:', error);
+      console.error('❌ Email send error:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response,
+        responseCode: error.responseCode
+      });
       throw new Error('Failed to send ticket confirmation');
     }
   }
